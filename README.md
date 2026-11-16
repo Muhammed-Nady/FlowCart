@@ -1,120 +1,152 @@
-# FlowCart - Microservices E-Commerce Platform
+<div align="center">
 
-A production-grade, containerized e-commerce microservices application built with **.NET 9**, **Clean Architecture**, **YARP API Gateway**, **Entity Framework Core**, **SQL Server**, **Redis**, and **Docker Compose**.
+# 🛒 FlowCart
+
+### Production-grade Microservices E-Commerce Platform
+
+A fully containerized, cloud-ready e-commerce backend built with **.NET 9**, **Clean Architecture**, **YARP API Gateway**, **Entity Framework Core**, **SQL Server**, **Redis**, and **Docker Compose**.
+
+[![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker)](https://www.docker.com/)
+[![SQL Server](https://img.shields.io/badge/SQL%20Server-2022-CC2927?style=flat-square&logo=microsoftsqlserver)](https://www.microsoft.com/sql-server)
+[![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=flat-square&logo=redis)](https://redis.io/)
+[![xUnit](https://img.shields.io/badge/Tests-60%20Passed-brightgreen?style=flat-square)](https://xunit.net/)
+
+</div>
 
 ---
 
-## Architecture Overview
+## Architecture
 
 ```
-                      ┌─────────────────────────┐
-                      │      Client / Postman   │
-                      └────────────┬────────────┘
-                                   │ HTTP :5000
+                        ┌──────────────────────┐
+                        │    Client / Postman   │
+                        └──────────┬───────────┘
+                                   │ :5000
                                    ▼
-                      ┌─────────────────────────┐
-                      │  ApiGateway (YARP)      │
-                      └──────┬─────┬─────┬──────┘
-                             │     │     │
-         ┌───────────────────┘     │     └───────────────────┐
-         ▼                         ▼                         ▼
-┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
-│ Catalog.Service │◄──────┤ Ordering.Service├──────►│Inventory.Service│
-│  (Port: 8080)   │       │  (Port: 8080)   │       │  (Port: 8080)   │
-└────────┬────────┘       └────────┬────────┘       └────────┬────────┘
-         │                         │                         │
-    ┌────┴────┐                    │                    ┌────┴────┐
-    ▼         ▼                    ▼                    ▼         ▼
-┌───────┐ ┌───────┐           ┌─────────┐          ┌─────────┐
-│ Redis │ │ SQL DB│           │ SQL DB  │          │ SQL DB  │
-└───────┘ └───────┘           └─────────┘          └─────────┘
+                        ┌──────────────────────┐
+                        │  API Gateway (YARP)  │
+                        └───┬──────────────┬───┘
+                            │              │
+              ┌─────────────┘              └─────────────┐
+              │                                          │
+              ▼                                          ▼
+  ┌───────────────────────┐              ┌───────────────────────┐
+  │    Catalog Service    │◄────────────►│   Ordering Service    │
+  │                       │  HTTP calls  │                       │
+  │  • Products           │              │  • Checkout flow      │
+  │  • Categories         │              │  • Order state machine │
+  │  • Pricing            │              │  • Price validation   │
+  └──────────┬────────────┘              └──────────┬────────────┘
+             │                                      │
+       ┌─────┴──────┐                               │
+       ▼            ▼                               ▼
+  ┌─────────┐  ┌─────────┐           ┌───────────────────────┐
+  │  Redis  │  │  SQL DB │           │  Inventory Service    │
+  │  Cache  │  │CatalogDb│           │                       │
+  └─────────┘  └─────────┘           │  • Stock tracking     │
+                                     │  • Atomic reserve /   │
+                                     │    release            │
+                                     └──────────┬────────────┘
+                                                │
+                                           ┌────┴────┐
+                                           ▼         ▼
+                                      ┌────────┐ ┌────────┐
+                                      │ SQL DB │ │ SQL DB │
+                                      │OrderDb │ │  InvDb │
+                                      └────────┘ └────────┘
 ```
 
-Each microservice is decoupled and implements strict **Clean Architecture** with four layers:
-1. `*.Domain`: Pure business entities, value objects, domain events, domain exceptions (zero external dependencies).
-2. `*.Application`: CQRS commands/queries via MediatR, FluentValidation pipeline behaviors, DTOs, and interface definitions.
-3. `*.Infrastructure`: EF Core `DbContext`, migrations, generic repository & Unit of Work implementations, Redis caching, and resilient HTTP client adapters.
-4. `*.API`: ASP.NET Core controllers, global exception handling middleware, health checks, and dependency injection setup.
+Each service follows strict **Clean Architecture** with four decoupled layers:
+
+| Layer | Responsibility |
+|---|---|
+| `*.Domain` | Entities, value objects, domain events, domain exceptions. Zero external dependencies. |
+| `*.Application` | CQRS handlers (MediatR), FluentValidation pipeline, DTOs, repository interfaces. |
+| `*.Infrastructure` | EF Core DbContext, migrations, repository & Unit of Work implementations, Redis, Polly HTTP adapters. |
+| `*.API` | ASP.NET Core controllers, exception middleware, health checks, DI configuration. |
 
 ---
 
-## Services & Components
+## Services
 
-| Service | Port (Internal / External) | Responsibility |
+| Service | External Port | Responsibility |
 |---|---|---|
-| **ApiGateway** | `8080` / `5000` | YARP reverse proxy, centralized request routing, health aggregation |
-| **Catalog.Service** | `8080` / Internal | Product catalog, categories, pricing, Redis Cache-Aside pattern |
-| **Ordering.Service** | `8080` / Internal | Order state machine (Pending, Confirmed, Canceled), checkout orchestration via resilient Polly HTTP clients |
-| **Inventory.Service** | `8080` / Internal | Warehouse stock tracking, atomic stock reservation/release, optimistic concurrency control |
-| **SQL Server** | `1433` / `1433` | Isolated databases per microservice (`CatalogDb`, `OrderingDb`, `InventoryDb`) |
-| **Redis** | `6379` / `6379` | Distributed cache for catalog lookups and fast product reads |
+| **API Gateway** | `:5000` | YARP reverse proxy — single entry point for all client traffic |
+| **Catalog Service** | Internal | Product catalog, categories, pricing, Redis Cache-Aside |
+| **Ordering Service** | Internal | Checkout orchestration, order state machine (Pending → Confirmed → Canceled) |
+| **Inventory Service** | Internal | Real-time warehouse stock, atomic reserve/release, optimistic concurrency |
+| **SQL Server 2022** | `:1433` | Isolated database per service (`CatalogDb`, `OrderingDb`, `InventoryDb`) |
+| **Redis 7** | `:6379` | Distributed cache for fast product reads |
 
 ---
 
-## Technology Stack
+## Tech Stack
 
-* **Runtime & Framework:** .NET 9 (C# 13), ASP.NET Core
-* **Reverse Proxy / Gateway:** YARP (Yet Another Reverse Proxy)
-* **Data Access & ORM:** Microsoft SQL Server 2022, Entity Framework Core 9
-* **Caching:** Redis 7 (`StackExchange.Redis`, `IDistributedCache`)
-* **Resilience & Fault Tolerance:** `Microsoft.Extensions.Http.Resilience` (Polly: retries, exponential backoff, circuit breakers)
-* **Validation:** FluentValidation with automatic MediatR pipeline behavior
-* **Testing:** xUnit, Moq, FluentAssertions
-* **Containerization:** Multi-stage Dockerfiles, Docker Compose
+| Category | Technology |
+|---|---|
+| Runtime | .NET 9, C# 13, ASP.NET Core |
+| Gateway | YARP (Yet Another Reverse Proxy) |
+| Database | Microsoft SQL Server 2022 + EF Core 9 |
+| Caching | Redis 7 (`StackExchange.Redis`, `IDistributedCache`) |
+| Resilience | `Microsoft.Extensions.Http.Resilience` — retries, exponential backoff, circuit breakers |
+| Messaging | MediatR 12 (CQRS, domain event dispatching) |
+| Validation | FluentValidation with automatic pipeline behavior |
+| Testing | xUnit, Moq, FluentAssertions |
+| Containers | Multi-stage Dockerfiles, Docker Compose v2 |
 
 ---
 
 ## Prerequisites
 
-Before running the application, make sure you have installed:
-* [Docker Desktop](https://www.docker.com/products/docker-desktop/) (with Docker Compose v2)
-* [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) *(optional, only required for running tests or building locally outside Docker)*
-* [Postman](https://www.postman.com/) or `curl` *(for testing endpoints)*
+| Tool | Required | Notes |
+|---|---|---|
+| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | ✅ Required | Includes Docker Compose v2 |
+| [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) | Optional | Only needed to run tests or debug locally |
+| [Postman](https://www.postman.com/) | Optional | A pre-built collection is included |
 
 ---
 
-## Quick Start (Running with Docker Compose)
+## Quick Start
 
-The entire system—including all microservices, API Gateway, SQL Server, and Redis—can be launched with a single command.
+> **The entire stack — microservices, gateway, SQL Server, and Redis — launches with one command.**
 
-### 1. Clone & Navigate to Repository
+### 1. Clone the repository
 ```bash
-git clone https://github.com/<your-username>/FlowCart.git
+git clone https://github.com/Muhammed-Nady/FlowCart.git
 cd FlowCart
 ```
 
-### 2. Build and Start All Containers
+### 2. Start everything
 ```bash
 docker compose up -d --build
 ```
 
-Docker Compose will start the services in proper sequence using health check conditions:
-1. `flowcart-sqlserver` and `flowcart-redis` start first and await health probes.
-2. `catalog-service`, `ordering-service`, and `inventory-service` start once databases and cache are healthy, automatically executing EF Core migrations and initial seeding.
-3. `api-gateway` starts and begins routing traffic.
+Docker Compose starts services in dependency order using health checks:
+1. **SQL Server** and **Redis** boot first and pass health probes.
+2. **Catalog**, **Ordering**, and **Inventory** services start once infrastructure is healthy. EF Core migrations and seed data run automatically.
+3. The **API Gateway** starts last and begins routing traffic.
 
-### 3. Verify Container Status
+### 3. Check container status
 ```bash
 docker compose ps
 ```
 
-All 6 containers should show `Up` / `healthy`:
+All 6 containers should be `Up`:
 ```
-NAME                         IMAGE                        STATUS
-flowcart-api-gateway         flowcart-api-gateway         Up
-flowcart-catalog-service     flowcart-catalog-service     Up
-flowcart-inventory-service   flowcart-inventory-service   Up
-flowcart-ordering-service    flowcart-ordering-service    Up
-flowcart-redis               redis:7-alpine               Up (healthy)
-flowcart-sqlserver           mcr.microsoft.com/mssql/...  Up (healthy)
+NAME                         STATUS
+flowcart-api-gateway         Up
+flowcart-catalog-service     Up
+flowcart-inventory-service   Up
+flowcart-ordering-service    Up
+flowcart-redis               Up (healthy)
+flowcart-sqlserver           Up (healthy)
 ```
 
-### 4. Verify API Gateway Health
-Open your browser or run:
+### 4. Confirm the gateway is live
 ```bash
 curl http://localhost:5000/
 ```
-Response:
 ```json
 {
   "service": "FlowCart API Gateway",
@@ -127,118 +159,119 @@ Response:
 }
 ```
 
-### 5. Stop Containers
-To stop and remove containers:
+### 5. Stop the stack
 ```bash
+# Stop containers (data persisted)
 docker compose down
-```
 
-To stop containers and wipe database volumes:
-```bash
+# Stop containers and wipe all volumes
 docker compose down -v
 ```
 
 ---
 
-## Running Locally for Development (Outside Docker)
+## Local Development (Without Docker)
 
-If you prefer to debug and run services directly through `dotnet run` or Visual Studio / VS Code:
+Prefer to run services directly for debugging?
 
-### 1. Start Infrastructure Only (SQL Server & Redis)
+### 1. Spin up only infrastructure
 ```bash
 docker compose up -d sqlserver redis
 ```
 
-### 2. Run Database Migrations
-Migrations run automatically on service startup, or you can apply them manually via EF Core CLI:
+### 2. Run each service in a separate terminal
 ```bash
-dotnet ef database update --project src/Services/Catalog/Catalog.Infrastructure --startup-project src/Services/Catalog/Catalog.API
-dotnet ef database update --project src/Services/Ordering/Ordering.Infrastructure --startup-project src/Services/Ordering/Ordering.API
-dotnet ef database update --project src/Services/Inventory/Inventory.Infrastructure --startup-project src/Services/Inventory/Inventory.API
-```
-
-### 3. Run Microservices
-Run each service in separate terminal tabs:
-```bash
-# Terminal 1 - Catalog Service
+# Terminal 1
 dotnet run --project src/Services/Catalog/Catalog.API
 
-# Terminal 2 - Inventory Service
+# Terminal 2
 dotnet run --project src/Services/Inventory/Inventory.API
 
-# Terminal 3 - Ordering Service
+# Terminal 3
 dotnet run --project src/Services/Ordering/Ordering.API
 
-# Terminal 4 - API Gateway
+# Terminal 4
 dotnet run --project src/ApiGateway/ApiGateway.API
 ```
 
----
-
-## Testing the Microservices
-
-### Option A: Using Postman (Recommended)
-
-A pre-configured Postman Collection is included at the root of the repository:
-[FlowCart.postman_collection.json](FlowCart.postman_collection.json)
-
-1. Open **Postman**.
-2. Click **Import** (top left) and select `FlowCart.postman_collection.json`.
-3. The collection is pre-configured with:
-   * `baseUrl`: `http://localhost:5000`
-   * `sampleProductId`: `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa` (pre-seeded Enterprise Dev Laptop)
-   * Automatic environment variable chaining (creating an order auto-sets `createdOrderId` for subsequent Confirm/Cancel requests).
+> Migrations and seed data run automatically on startup via `Database.MigrateAsync()`.
 
 ---
 
-### Option B: Using cURL or PowerShell
+## API Reference
 
-#### 1. Browse Catalog Products
-```bash
-curl -X GET http://localhost:5000/api/products?pageNumber=1&pageSize=10
-```
+All endpoints are accessed through the gateway at `http://localhost:5000`.
 
-#### 2. Get Product By ID (Populates & Reads Redis Cache)
-```bash
-curl -X GET http://localhost:5000/api/products/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
-```
+### Catalog
 
-#### 3. Check Real-Time Warehouse Stock
-```bash
-curl -X GET http://localhost:5000/api/inventory/products/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
-```
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/products` | List all products (paged) |
+| `GET` | `/api/products/{id}` | Get product by ID (Redis Cache-Aside) |
+| `POST` | `/api/products` | Create a new product |
+| `PUT` | `/api/products/{id}/price` | Update a product's price |
+| `GET` | `/api/categories` | List all categories |
 
-#### 4. Place an Order (End-to-End Orchestration)
-The Ordering Service validates price with the Catalog Service and reserves stock in the Inventory Service:
+### Inventory
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/inventory/products/{id}` | Get live stock levels for a product |
+| `POST` | `/api/inventory/reserve` | Reserve stock (called by Ordering) |
+| `POST` | `/api/inventory/release` | Release reserved stock on cancellation |
+
+### Ordering
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/orders` | Create order — validates price + reserves stock |
+| `GET` | `/api/orders` | List all orders (paged, filterable by status) |
+| `GET` | `/api/orders/{id}` | Get order by ID |
+| `GET` | `/api/orders/customer/{customerId}` | Get all orders for a customer |
+| `PUT` | `/api/orders/{id}/confirm` | Confirm a pending order |
+| `PUT` | `/api/orders/{id}/cancel` | Cancel an order and release reserved stock |
+
+---
+
+## Testing
+
+### Postman Collection
+
+A ready-to-use collection is included at the root of the repo.
+
+1. Open **Postman** → **Import** → select `FlowCart.postman_collection.json`
+2. The collection includes pre-wired variables:
+   - `baseUrl` → `http://localhost:5000`
+   - `sampleProductId` → pre-seeded laptop ID
+   - `createdOrderId` → auto-populated after creating an order
+
+### cURL Examples
+
+**Place an order (full end-to-end checkout):**
 ```bash
 curl -X POST http://localhost:5000/api/orders \
   -H "Content-Type: application/json" \
   -d '{
     "customerId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     "shippingAddress": {
-      "street": "123 Tech Way",
-      "city": "San Francisco",
-      "state": "CA",
-      "country": "USA",
-      "zipCode": "94107"
+      "street": "123 Tech Way", "city": "San Francisco",
+      "state": "CA", "country": "USA", "zipCode": "94107"
     },
-    "items": [
-      {
-        "productId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-        "productName": "Enterprise Dev Laptop 16-inch",
-        "expectedUnitPrice": 1999.99,
-        "quantity": 1
-      }
-    ]
+    "items": [{
+      "productId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "productName": "Enterprise Dev Laptop 16-inch",
+      "expectedUnitPrice": 1999.99,
+      "quantity": 1
+    }]
   }'
 ```
 
-#### 5. Confirm Order
+**Confirm an order:**
 ```bash
 curl -X PUT http://localhost:5000/api/orders/<ORDER_ID>/confirm
 ```
 
-#### 6. Cancel Order (Stock is Automatically Released)
+**Cancel an order (stock is automatically released):**
 ```bash
 curl -X PUT http://localhost:5000/api/orders/<ORDER_ID>/cancel \
   -H "Content-Type: application/json" \
@@ -247,21 +280,19 @@ curl -X PUT http://localhost:5000/api/orders/<ORDER_ID>/cancel \
 
 ---
 
-## Running Automated Unit Tests
+## Unit Tests
 
-The solution contains comprehensive unit test suites covering domain logic, CQRS handlers, validation rules, and controllers with mocked dependencies.
-
-Execute all unit tests across the solution:
 ```bash
 dotnet test
 ```
 
-### Test Coverage Summary
-* `FlowCart.BuildingBlocks.UnitTests`: 14 tests (Repository, Unit of Work, Result pattern, Domain Event dispatching)
-* `Catalog.UnitTests`: 18 tests (Product/Category entities, CQRS handlers, Redis Cache-Aside, FluentValidation)
-* `Ordering.UnitTests`: 16 tests (Order aggregate state transitions, Polly HTTP resilience, checkout orchestration)
-* `Inventory.UnitTests`: 12 tests (Atomic stock reservation, optimistic concurrency, release logic)
-* **Total:** 60 tests passed (0 failures).
+| Project | Tests | Coverage |
+|---|---|---|
+| `FlowCart.BuildingBlocks.UnitTests` | 14 | Repository, Unit of Work, Result pattern, domain event dispatching |
+| `Catalog.UnitTests` | 18 | Product domain rules, CQRS handlers, Redis Cache-Aside, validators |
+| `Ordering.UnitTests` | 16 | Order state machine, Polly resilience, checkout orchestration |
+| `Inventory.UnitTests` | 12 | Atomic stock reservation, optimistic concurrency, release logic |
+| **Total** | **60** | **0 failures** |
 
 ---
 
@@ -269,44 +300,41 @@ dotnet test
 
 ```
 FlowCart/
-├── docker-compose.yml              # Multi-container orchestration
-├── nuget.config                    # Package source configuration
-├── FlowCart.slnx                   # Solution configuration
-├── FlowCart.postman_collection.json# Postman test collection
-├── README.md                       # Documentation
+├── docker-compose.yml
+├── FlowCart.postman_collection.json
+├── README.md
+│
 ├── src/
-│   ├── ApiGateway/                 # YARP Reverse Proxy
+│   ├── ApiGateway/
 │   │   └── ApiGateway.API/
-│   ├── BuildingBlocks/             # Shared Kernel
+│   │
+│   ├── BuildingBlocks/                     # Shared abstractions
 │   │   ├── FlowCart.BuildingBlocks.Domain/
 │   │   ├── FlowCart.BuildingBlocks.Application/
 │   │   └── FlowCart.BuildingBlocks.Infrastructure/
+│   │
 │   └── Services/
-│       ├── Catalog/                # Catalog & Pricing Microservice
+│       ├── Catalog/
 │       │   ├── Catalog.Domain/
 │       │   ├── Catalog.Application/
 │       │   ├── Catalog.Infrastructure/
 │       │   └── Catalog.API/
-│       ├── Ordering/               # Ordering & Checkout Microservice
+│       ├── Ordering/
 │       │   ├── Ordering.Domain/
 │       │   ├── Ordering.Application/
 │       │   ├── Ordering.Infrastructure/
 │       │   └── Ordering.API/
-│       └── Inventory/              # Inventory & Warehouse Microservice
+│       └── Inventory/
 │           ├── Inventory.Domain/
 │           ├── Inventory.Application/
 │           ├── Inventory.Infrastructure/
 │           └── Inventory.API/
+│
 └── tests/
-    ├── BuildingBlocks/FlowCart.BuildingBlocks.UnitTests/
+    ├── BuildingBlocks/
+    │   └── FlowCart.BuildingBlocks.UnitTests/
     └── Services/
         ├── Catalog.UnitTests/
         ├── Ordering.UnitTests/
         └── Inventory.UnitTests/
 ```
-
----
-
-## License
-
-This project is licensed under the MIT License.

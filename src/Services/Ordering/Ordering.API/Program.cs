@@ -42,7 +42,7 @@ using (var scope = app.Services.CreateScope())
         var context = services.GetRequiredService<OrderingDbContext>();
         if (context.Database.IsRelational())
         {
-            await context.Database.EnsureCreatedAsync();
+            await context.Database.MigrateAsync();
         }
     }
     catch (Exception ex)

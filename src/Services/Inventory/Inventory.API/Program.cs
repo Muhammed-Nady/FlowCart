@@ -42,7 +42,7 @@ using (var scope = app.Services.CreateScope())
         var context = services.GetRequiredService<InventoryDbContext>();
         if (context.Database.IsRelational())
         {
-            await context.Database.EnsureCreatedAsync();
+            await context.Database.MigrateAsync();
 
             if (!await context.InventoryItems.AnyAsync())
             {

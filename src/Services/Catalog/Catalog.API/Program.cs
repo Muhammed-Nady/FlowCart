@@ -42,7 +42,7 @@ using (var scope = app.Services.CreateScope())
         var context = services.GetRequiredService<CatalogDbContext>();
         if (context.Database.IsRelational())
         {
-            await context.Database.EnsureCreatedAsync();
+            await context.Database.MigrateAsync();
 
             if (!await context.Categories.AnyAsync())
             {

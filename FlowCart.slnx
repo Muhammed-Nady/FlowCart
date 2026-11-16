@@ -11,11 +11,18 @@
     <Project Path="src/Services/Catalog/Catalog.Domain/Catalog.Domain.csproj" />
     <Project Path="src/Services/Catalog/Catalog.Infrastructure/Catalog.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/Services/Ordering/">
+    <Project Path="src/Services/Ordering/Ordering.API/Ordering.API.csproj" />
+    <Project Path="src/Services/Ordering/Ordering.Application/Ordering.Application.csproj" />
+    <Project Path="src/Services/Ordering/Ordering.Domain/Ordering.Domain.csproj" />
+    <Project Path="src/Services/Ordering/Ordering.Infrastructure/Ordering.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/BuildingBlocks/">
     <Project Path="tests/BuildingBlocks/FlowCart.BuildingBlocks.UnitTests/FlowCart.BuildingBlocks.UnitTests.csproj" />
   </Folder>
   <Folder Name="/tests/Services/">
     <Project Path="tests/Services/Catalog.UnitTests/Catalog.UnitTests.csproj" />
+    <Project Path="tests/Services/Ordering.UnitTests/Ordering.UnitTests.csproj" />
   </Folder>
 </Solution>

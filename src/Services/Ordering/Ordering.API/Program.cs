@@ -33,7 +33,7 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/healthz");
 
-// Automatically apply migrations in development/container startup
+// Automatically apply schema in development/container startup
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -42,13 +42,13 @@ using (var scope = app.Services.CreateScope())
         var context = services.GetRequiredService<OrderingDbContext>();
         if (context.Database.IsRelational())
         {
-            await context.Database.MigrateAsync();
+            await context.Database.EnsureCreatedAsync();
         }
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while migrating the Ordering database.");
+        logger.LogError(ex, "An error occurred while initializing the Ordering database.");
     }
 }
 

@@ -44,7 +44,8 @@ public static class DependencyInjection
             options.Retry.Delay = TimeSpan.FromSeconds(1);
             options.Retry.BackoffType = DelayBackoffType.Exponential;
             options.Retry.UseJitter = true;
-            options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(10);
+            options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(5);
+            options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
             options.CircuitBreaker.FailureRatio = 0.5;
             options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
         });
@@ -61,7 +62,8 @@ public static class DependencyInjection
             options.Retry.Delay = TimeSpan.FromSeconds(1);
             options.Retry.BackoffType = DelayBackoffType.Exponential;
             options.Retry.UseJitter = true;
-            options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(10);
+            options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(5);
+            options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
             options.CircuitBreaker.FailureRatio = 0.5;
             options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
         });

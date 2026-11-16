@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/ApiGateway/">
+    <Project Path="src/ApiGateway/ApiGateway.API/ApiGateway.API.csproj" />
+  </Folder>
   <Folder Name="/BuildingBlocks/">
     <Project Path="src/BuildingBlocks/FlowCart.BuildingBlocks.Application/FlowCart.BuildingBlocks.Application.csproj" />
     <Project Path="src/BuildingBlocks/FlowCart.BuildingBlocks.Domain/FlowCart.BuildingBlocks.Domain.csproj" />

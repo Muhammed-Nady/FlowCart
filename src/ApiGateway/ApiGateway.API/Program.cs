@@ -10,6 +10,21 @@ var app = builder.Build();
 
 app.UseRouting();
 
+app.MapGet("/", () => Results.Ok(new
+{
+    Service = "FlowCart API Gateway",
+    Status = "Online",
+    Routes = new
+    {
+        Catalog = "/api/products",
+        Categories = "/api/categories",
+        Orders = "/api/orders",
+        Inventory = "/api/inventory/products/{productId}"
+    },
+    HealthCheck = "/healthz",
+    TimestampUtc = DateTime.UtcNow
+}));
+
 app.MapHealthChecks("/healthz");
 
 // Forward all matched traffic through YARP

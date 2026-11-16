@@ -4,8 +4,18 @@
     <Project Path="src/BuildingBlocks/FlowCart.BuildingBlocks.Domain/FlowCart.BuildingBlocks.Domain.csproj" />
     <Project Path="src/BuildingBlocks/FlowCart.BuildingBlocks.Infrastructure/FlowCart.BuildingBlocks.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/Services/" />
+  <Folder Name="/Services/Catalog/">
+    <Project Path="src/Services/Catalog/Catalog.API/Catalog.API.csproj" />
+    <Project Path="src/Services/Catalog/Catalog.Application/Catalog.Application.csproj" />
+    <Project Path="src/Services/Catalog/Catalog.Domain/Catalog.Domain.csproj" />
+    <Project Path="src/Services/Catalog/Catalog.Infrastructure/Catalog.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/BuildingBlocks/">
     <Project Path="tests/BuildingBlocks/FlowCart.BuildingBlocks.UnitTests/FlowCart.BuildingBlocks.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Services/">
+    <Project Path="tests/Services/Catalog.UnitTests/Catalog.UnitTests.csproj" />
   </Folder>
 </Solution>

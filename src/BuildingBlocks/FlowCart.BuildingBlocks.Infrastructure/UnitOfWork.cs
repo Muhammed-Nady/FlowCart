@@ -24,8 +24,15 @@ public class UnitOfWork<TContext> : IUnitOfWork
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        await DispatchDomainEventsAsync(cancellationToken);
-        return await _context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await DispatchDomainEventsAsync(cancellationToken);
+            return await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            throw new ConcurrencyException("A concurrency conflict occurred while persisting changes.", ex);
+        }
     }
 
     public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)

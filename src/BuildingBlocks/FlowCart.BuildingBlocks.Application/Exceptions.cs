@@ -39,6 +39,12 @@ public class ConflictException : AppException
     public ConflictException(string message) : base(message) { }
 }
 
+public class ConcurrencyException : AppException
+{
+    public ConcurrencyException(string message) : base(message) { }
+    public ConcurrencyException(string message, Exception innerException) : base(message, innerException) { }
+}
+
 public class DomainException : AppException
 {
     public DomainException(string message) : base(message) { }

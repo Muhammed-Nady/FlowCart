@@ -1,0 +1,258 @@
+{
+  "info": {
+    "_postman_id": "b34df612-4f70-4cb6-bb7e-40549c4d9220",
+    "name": "FlowCart Microservices API",
+    "description": "Postman Collection for testing FlowCart Microservices through YARP API Gateway",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "sampleProductId",
+      "value": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "type": "string"
+    },
+    {
+      "key": "createdOrderId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Gateway",
+      "item": [
+        {
+          "name": "Discovery & Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Catalog Service",
+      "item": [
+        {
+          "name": "Get Products (Paged)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?pageNumber=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"],
+              "query": [
+                { "key": "pageNumber", "value": "1" },
+                { "key": "pageSize", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Product By Id (Redis Cache-Aside)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{sampleProductId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products", "{{sampleProductId}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"4K Ultra-Wide Monitor 34-inch\",\n  \"description\": \"Curved HDR display for productivity and gaming\",\n  \"sku\": \"MON-UW-34\",\n  \"price\": 799.99,\n  \"currency\": \"USD\",\n  \"categoryId\": \"11111111-1111-1111-1111-111111111111\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "products"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Inventory Service",
+      "item": [
+        {
+          "name": "Get Stock by Product ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/products/{{sampleProductId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventory", "products", "{{sampleProductId}}"]
+            }
+          }
+        },
+        {
+          "name": "Reserve Stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"productId\": \"{{sampleProductId}}\",\n      \"quantity\": 1\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/reserve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventory", "reserve"]
+            }
+          }
+        },
+        {
+          "name": "Release Stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"productId\": \"{{sampleProductId}}\",\n      \"quantity\": 1\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/release",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventory", "release"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ordering Service",
+      "item": [
+        {
+          "name": "Checkout / Create Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.id) {",
+                  "    pm.collectionVariables.set('createdOrderId', jsonData.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"shippingAddress\": {\n    \"street\": \"123 Tech Way\",\n    \"city\": \"San Francisco\",\n    \"state\": \"CA\",\n    \"country\": \"USA\",\n    \"zipCode\": \"94107\"\n  },\n  \"items\": [\n    {\n      \"productId\": \"{{sampleProductId}}\",\n      \"productName\": \"Enterprise Dev Laptop 16-inch\",\n      \"expectedUnitPrice\": 1999.99,\n      \"quantity\": 1\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders"]
+            }
+          }
+        },
+        {
+          "name": "Get Orders (Paged)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders?pageNumber=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders"],
+              "query": [
+                { "key": "pageNumber", "value": "1" },
+                { "key": "pageSize", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Order By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{createdOrderId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{createdOrderId}}"]
+            }
+          }
+        },
+        {
+          "name": "Confirm Order",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{createdOrderId}}/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{createdOrderId}}", "confirm"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Item ordered by mistake\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{createdOrderId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "{{createdOrderId}}", "cancel"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

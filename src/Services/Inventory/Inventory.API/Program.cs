@@ -33,7 +33,7 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/healthz");
 
-// Automatically apply migrations in development/container startup
+// Automatically apply schema and seed initial stock in development/container startup
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -42,13 +42,31 @@ using (var scope = app.Services.CreateScope())
         var context = services.GetRequiredService<InventoryDbContext>();
         if (context.Database.IsRelational())
         {
-            await context.Database.MigrateAsync();
+            await context.Database.EnsureCreatedAsync();
+
+            if (!await context.InventoryItems.AnyAsync())
+            {
+                var item1 = Inventory.Domain.InventoryItem.Create(
+                    Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                    50);
+
+                var item2 = Inventory.Domain.InventoryItem.Create(
+                    Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+                    100);
+
+                var item3 = Inventory.Domain.InventoryItem.Create(
+                    Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"),
+                    75);
+
+                await context.InventoryItems.AddRangeAsync(item1, item2, item3);
+                await context.SaveChangesAsync();
+            }
         }
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while migrating the Inventory database.");
+        logger.LogError(ex, "An error occurred while initializing the Inventory database.");
     }
 }
 

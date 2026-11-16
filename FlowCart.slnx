@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/FlowCart.BuildingBlocks.Application/FlowCart.BuildingBlocks.Application.csproj" />
+    <Project Path="src/BuildingBlocks/FlowCart.BuildingBlocks.Domain/FlowCart.BuildingBlocks.Domain.csproj" />
+    <Project Path="src/BuildingBlocks/FlowCart.BuildingBlocks.Infrastructure/FlowCart.BuildingBlocks.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/BuildingBlocks/">
+    <Project Path="tests/BuildingBlocks/FlowCart.BuildingBlocks.UnitTests/FlowCart.BuildingBlocks.UnitTests.csproj" />
+  </Folder>
+</Solution>
